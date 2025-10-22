@@ -1,128 +1,118 @@
-import React,{ useState } from 'react';
+import React, { useState } from 'react';
 import { useStateContext } from '../context/StateContext';
 import { usePaystackPayment } from "react-paystack";
+import axios from "axios";
 import { getSession } from 'next-auth/react';
 
 const Checkout = () => {
-  
   const { cartItems, totalPrice } = useStateContext();
 
-  const publicKey = "pk_test_825ec86cf1c76c265fa7d60737abbf0ce16cc16b";
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('card'); // card | bank | crypto
 
-  const config = {
-		
-		email: email,
-		amount: totalPrice * 100,
-		publicKey: publicKey
-	};
-	const initializePayment = usePaystackPayment(config);
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://wishhoffrichies-fi38.onrender.com";
 
-	const onSuccess = () => {
-		alert('success');
-	};
+  const handlePayment = async () => {
+    try {
+      // 1️⃣ Create payment session in your API
+      const response = await axios.post(`${siteUrl}/api/payments/create-session`, {
+        wishId: "test-wish", // replace with actual wishId
+        amount: totalPrice,
+        donorName: fullName || "Anonymous",
+        donorEmail: email || "anonymous@example.com",
+        paymentMethod,
+      });
 
-	const onClose = () => {
-		alert("Payment cancelled.");
-	};
-  
-  const handleSubmit = (e) => {
-		e.preventDefault();
-		initializePayment(onSuccess, onClose);
-	};
+      const { redirect, reference } = response.data;
+
+      // 2️⃣ Paystack initialization (if card)
+      if (paymentMethod === "card") {
+        const config = {
+          email: email,
+          amount: totalPrice * 100,
+          publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+          reference
+        };
+
+        const initializePayment = usePaystackPayment(config);
+        initializePayment(
+          () => alert("Payment successful!"),
+          () => alert("Payment cancelled")
+        );
+      }
+
+      // 3️⃣ Redirect to Flutterwave or NowPayments
+      else {
+        window.location.href = redirect; // browser redirect
+      }
+
+    } catch (err) {
+      console.error("Payment error:", err.response?.data || err.message);
+      alert("Failed to initialize payment. Check console.");
+    }
+  };
+
   return (
-<div>
-    <center>
-    <h1 className='checkout-text'>Checkout</h1>
-    </center>
-  
-  <div className="row">
-    <div className="col-50">
-      <div className="billing-info">
-        <form>
-        <div className="row">
-            <div className="col-50">
+    <div>
+      <center><h1 className='checkout-text'>Checkout</h1></center>
+
+      <div className="row">
+        <div className="col-50">
+          <div className="billing-info">
+            <form onSubmit={(e) => { e.preventDefault(); handlePayment(); }}>
               <h3 className='checkout-text'>Billing Address</h3>
-              <label htmlFor="fname"><i className="fa fa-user" /> Full Name</label>
-              <input type="text" id="fname" name="firstname" placeholder="John M. Doe" value={fullName} onChange={(e) => setFullName(e.target.value)}/>
-              <p>{fullName}</p>
-              <label htmlFor="email"><i className="fa fa-envelope" /> Email</label>
-              <input type="text" id="email" name="email" placeholder="john@example.com" value={email} onChange={(e) => setEmail(e.target.value)}/>
-              <p>{email}</p>
-              <label htmlFor="adr"><i className="fa fa-address-card-o" /> Address</label>
-              <input type="text" id="adr" name="address" placeholder="542 W. 15th Street" value={address} onChange={(e) => setAddress(e.target.value)}/>
-              <label htmlFor="city"><i className="fa fa-institution" /> City</label>
-              <input type="text" id="city" name="city" placeholder="New York" value={city} onChange={(e) => setCity(e.target.value)} />
-              <div className="row">
-                <div className="col-50">
-                  <label htmlFor="state">State</label>
-                  <input type="text" id="state" name="state" placeholder="NY" value={state} onChange={(e) => setState(e.target.value)}/>
-                </div>
-                <div className="col-50">
-                  <label htmlFor="zip">Zip</label>
-                  <input type="text" id="zip" name="zip" placeholder={10001} value={zip} onChange={(e) => setZip(e.target.value)}/>
-                </div>
-              </div>
-            </div>
-            
+              <input type="text" placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} />
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+              <input type="text" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)} />
+              <input type="text" placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+              <input type="text" placeholder="State" value={state} onChange={e => setState(e.target.value)} />
+              <input type="text" placeholder="Zip" value={zip} onChange={e => setZip(e.target.value)} />
+
+              <h3>Payment Method</h3>
+              <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                <option value="card">Paystack (Card)</option>
+                <option value="bank">Flutterwave (Bank)</option>
+                <option value="crypto">NowPayments (Crypto)</option>
+              </select>
+
+              <center>
+                <button className='btn' type="submit">
+                  Pay N{totalPrice}
+                </button>
+              </center>
+            </form>
           </div>
-          <label>
-            <input type="checkbox" defaultChecked="checked" name="sameadr" /> Shipping address same as billing
-          </label> 
-        <center><button onClick={handleSubmit} className='btn'>Pay with Paystack</button></center> 
-        </form>
+        </div>
+
+        <div className="col-25">
+          <div className="price-container">
+            <h4 className='checkout-cart-title'>Cart <span className="price">{cartItems.length}</span></h4>
+            {cartItems.length > 0 ? cartItems.map(item => (
+              <div key={item._id} className='checkout-items-container'>
+                <p>{item.name} <span className="price">N{item.price}</span></p>
+                <p>Quantity: {item.quantity}</p>
+              </div>
+            )) : <p>Your cart is empty</p>}
+            <hr />
+            <p>Total <span className="price"><b>N{totalPrice}</b></span></p>
+          </div>
+        </div>
       </div>
     </div>
-    <div className="col-25">
-      <div className=" price-container">
-        <h4 className='checkout-cart-title'>Cart <span className="price" style={{color: 'black'}}><i className="fa fa-shopping-cart" /> <b>{ cartItems.length }</b></span></h4>
-
-        
-        {
-          cartItems.length >= 1 ? cartItems.map((item) => (
-            <div className='checkout-items-container' key={item._id}>
-              <p className='product-price-checkout'><a href="#">{item.name}</a> <span className="price">N{item.price}</span> </p>
-              <p className='cart-item-quantity'>Quantity: { item.quantity }</p>
-            </div>
-            
-
-          ))
-          :(
-            <p className='product-price-checkout'><a href="#">Nothing in Shopping Add something to your cart first</a> </p>
-          )
-        }
-        
-        <hr className='price-hr'/>
-        <p>Total <span className="price" style={{color: 'black'}}><b>N { totalPrice }</b></span></p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-  )
-}
+  );
+};
 
 export async function getServerSideProps(context) {
-  const session = await getSession(context)
-
+  const session = await getSession(context);
   if (!session) {
-    return {
-      redirect: {
-        destination: '/Login',
-        permanent: false,
-      }
-    }
+    return { redirect: { destination: '/Login', permanent: false } };
   }
-  return{
-    props:{ session }
-  }
+  return { props: { session } };
 }
 
-
-export default Checkout
+export default Checkout;
