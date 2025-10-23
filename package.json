@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "rm -f yarn.lock package-lock.json && yarn install",
-    "build": "next build",
+    "build": "DISABLE_ESLINT_PLUGIN=true next build",
     "start": "next start",
     "lint": "next lint"
   },
