@@ -7,8 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "rm -f yarn.lock package-lock.json && yarn install",
-    "build": "DISABLE_ESLINT_PLUGIN=true next build",
+    "prebuild": "rm -f yarn.lock package-lock.json && yarn install --check-files",
+    "build": "DISABLE_ESLINT_PLUGIN=true yarn install --check-files && next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -21,6 +21,7 @@
     "@sanity/client": "^3.2.0",
     "@sanity/image-url": "^1.0.1",
     "@stripe/stripe-js": "^1.25.0",
+    "@supabase/supabase-js": "^2.46.1",
     "axios": "^1.6.2",
     "bcrypt": "^5.0.1",
     "canvas-confetti": "^1.5.1",
