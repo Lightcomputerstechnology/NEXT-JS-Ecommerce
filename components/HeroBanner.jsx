@@ -1,32 +1,49 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { urlFor } from '../lib/client';
 
-const HeroBanner = ({HeroBanner,mobileImg}) => {
+const HeroBanner = ({ HeroBanner, mobileImg }) => {
   return (
     <div className="hero-banner-container">
-        <div>
-            <p className="beats-solo">
-                {HeroBanner.smallText}
-            </p>
-            <h3>{HeroBanner.midText}</h3>
-            <h1>{HeroBanner.largeText1}</h1>
-            <img src={urlFor(HeroBanner.image)} alt="headphones" 
-            className='hero-banner-image'/>
-            <img src={urlFor(mobileImg)} alt="headphones-mobile" className='hero-banner-image-mobile'/>
-            <div>
-                <Link href={`/product/${HeroBanner.product}`}>
-                    <button type="button">{HeroBanner.buttonText}</button>
-                </Link>
+      <div>
+        <p className="beats-solo">{HeroBanner.smallText}</p>
+        <h3>{HeroBanner.midText}</h3>
+        <h1>{HeroBanner.largeText1}</h1>
 
-                <div className="desc">
-                    <h5>Description</h5>
-                    <p>{HeroBanner.desc}</p>
-                </div>
-            </div>
+        {HeroBanner.image && (
+          <Image
+            src={urlFor(HeroBanner.image)}
+            alt="Hero banner"
+            className='hero-banner-image'
+            width={700}
+            height={500}
+          />
+        )}
+
+        {mobileImg && (
+          <Image
+            src={urlFor(mobileImg)}
+            alt="Hero banner mobile"
+            className='hero-banner-image-mobile'
+            width={400}
+            height={300}
+          />
+        )}
+
+        <div>
+          <Link href={`/product/${HeroBanner.product}`}>
+            <button type="button">{HeroBanner.buttonText}</button>
+          </Link>
+
+          <div className="desc">
+            <h5>Description</h5>
+            <p>{HeroBanner.desc}</p>
+          </div>
         </div>
+      </div>
     </div>
   )
 }
 
-export default HeroBanner
+export default HeroBanner;
