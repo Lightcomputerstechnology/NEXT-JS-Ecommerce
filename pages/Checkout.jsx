@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStateContext } from '../context/StateContext';
 import { usePaystackPayment } from "react-paystack";
 import axios from "axios";
@@ -17,6 +17,15 @@ const Checkout = () => {
 
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://wishhoffrichies-fi38.onrender.com";
 
+  // ✅ Paystack config must be defined at top-level
+  const paystackConfig = {
+    email,
+    amount: totalPrice * 100,
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+    reference: `checkout_${Date.now()}`,
+  };
+  const initializePaystackPayment = usePaystackPayment(paystackConfig);
+
   const handlePayment = async () => {
     try {
       // 1️⃣ Create payment session in your API
@@ -28,27 +37,17 @@ const Checkout = () => {
         paymentMethod,
       });
 
-      const { redirect, reference } = response.data;
+      const { redirect } = response.data;
 
       // 2️⃣ Paystack initialization (if card)
       if (paymentMethod === "card") {
-        const config = {
-          email: email,
-          amount: totalPrice * 100,
-          publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-          reference
-        };
-
-        const initializePayment = usePaystackPayment(config);
-        initializePayment(
+        initializePaystackPayment(
           () => alert("Payment successful!"),
           () => alert("Payment cancelled")
         );
-      }
-
-      // 3️⃣ Redirect to Flutterwave or NowPayments
-      else {
-        window.location.href = redirect; // browser redirect
+      } else {
+        // 3️⃣ Redirect to Flutterwave or NowPayments
+        window.location.href = redirect;
       }
 
     } catch (err) {
