@@ -6,10 +6,12 @@
     "node": "16.x"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+  "dev": "next dev",
+  "prebuild": "rm -f yarn.lock package-lock.json && yarn install",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint"
+}
   },
   "dependencies": {
     "@babel/core": "^7.17.9",
